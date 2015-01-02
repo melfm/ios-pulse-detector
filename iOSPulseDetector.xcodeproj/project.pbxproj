@@ -29,6 +29,8 @@
 		8DBA87861A4C919500530FB7 /* Default.png in Resources */ = {isa = PBXBuildFile; fileRef = 8DBA87831A4C919500530FB7 /* Default.png */; };
 		8DBA87871A4C919500530FB7 /* Default@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 8DBA87841A4C919500530FB7 /* Default@2x.png */; };
 		8DBA87891A4C93A500530FB7 /* boost.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8DBA87881A4C93A500530FB7 /* boost.framework */; };
+		8DBA87911A502BFA00530FB7 /* libgsl_all.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8DBA87901A502BFA00530FB7 /* libgsl_all.a */; };
+		8DBA87B11A56E0A600530FB7 /* PulseDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8DBA87AF1A56E0A600530FB7 /* PulseDetector.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -58,6 +60,9 @@
 		8DBA87831A4C919500530FB7 /* Default.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = Default.png; path = iOSPulseDetector/Default.png; sourceTree = SOURCE_ROOT; };
 		8DBA87841A4C919500530FB7 /* Default@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Default@2x.png"; path = "iOSPulseDetector/Default@2x.png"; sourceTree = SOURCE_ROOT; };
 		8DBA87881A4C93A500530FB7 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = ../BoostiOS/ios/framework/boost.framework; sourceTree = "<group>"; };
+		8DBA87901A502BFA00530FB7 /* libgsl_all.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgsl_all.a; path = "../../../../Downloads/gsl-ios-master/outdir/libgsl_all.a"; sourceTree = "<group>"; };
+		8DBA87AF1A56E0A600530FB7 /* PulseDetector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PulseDetector.cpp; path = iOSPulseDetector/PulseDetector.cpp; sourceTree = SOURCE_ROOT; };
+		8DBA87B01A56E0A600530FB7 /* PulseDetector.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = PulseDetector.hpp; path = iOSPulseDetector/PulseDetector.hpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +70,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8DBA87911A502BFA00530FB7 /* libgsl_all.a in Frameworks */,
 				8DBA87891A4C93A500530FB7 /* boost.framework in Frameworks */,
 				8DBA876D1A4C90E800530FB7 /* opencv2.framework in Frameworks */,
 				83FA79471748FF4A00248405 /* QuartzCore.framework in Frameworks */,
@@ -103,6 +109,7 @@
 		83FA79111748FE9000248405 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8DBA87901A502BFA00530FB7 /* libgsl_all.a */,
 				8DBA87881A4C93A500530FB7 /* boost.framework */,
 				8DBA876C1A4C90E800530FB7 /* opencv2.framework */,
 				83FA79461748FF4A00248405 /* QuartzCore.framework */,
@@ -122,6 +129,8 @@
 		83FA79181748FE9000248405 /* iOSPulseDetector */ = {
 			isa = PBXGroup;
 			children = (
+				8DBA87AF1A56E0A600530FB7 /* PulseDetector.cpp */,
+				8DBA87B01A56E0A600530FB7 /* PulseDetector.hpp */,
 				8DBA876E1A4C910200530FB7 /* AppDelegate.h */,
 				8DBA876F1A4C910200530FB7 /* AppDelegate.m */,
 				8DBA87771A4C912700530FB7 /* MainStoryboard_iPad.storyboard */,
@@ -175,7 +184,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0450;
-				ORGANIZATIONNAME = "Alexander Shishkov & Kirill Kornyakov";
+				ORGANIZATIONNAME = "";
 			};
 			buildConfigurationList = 83FA79081748FE9000248405 /* Build configuration list for PBXProject "iOSPulseDetector" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -217,6 +226,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8DBA87741A4C910200530FB7 /* AppDelegate.m in Sources */,
+				8DBA87B11A56E0A600530FB7 /* PulseDetector.cpp in Sources */,
 				8DBA87811A4C917700530FB7 /* main.m in Sources */,
 				8DBA87761A4C910200530FB7 /* ViewController.m in Sources */,
 			);
@@ -312,12 +322,18 @@
 					"\"$(SRCROOT)/..\"",
 					/Users/melissamozifian/Documents/Workspace/iOS/HelloOpenCV,
 					/Users/melissamozifian/Documents/Workspace/iOS/BoostiOS/ios/framework,
+					"$(LOCAL_LIBRARY_DIR)/Frameworks",
+					"/Users/melissamozifian/Downloads/gsl-fw_build_script",
 				);
 				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "iOSPulseDetector/iOSPulseDetector-Prefix.pch";
 				INFOPLIST_FILE = "$(SRCROOT)/iOSPulseDetector/iOSPulseDetector-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.1;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/melissamozifian/Downloads/gsl-ios-master/outdir",
+				);
 				PRODUCT_NAME = iOSPulseDetector;
 				WRAPPER_EXTENSION = app;
 			};
@@ -331,12 +347,18 @@
 					"\"$(SRCROOT)/..\"",
 					/Users/melissamozifian/Documents/Workspace/iOS/HelloOpenCV,
 					/Users/melissamozifian/Documents/Workspace/iOS/BoostiOS/ios/framework,
+					"$(LOCAL_LIBRARY_DIR)/Frameworks",
+					"/Users/melissamozifian/Downloads/gsl-fw_build_script",
 				);
 				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "iOSPulseDetector/iOSPulseDetector-Prefix.pch";
 				INFOPLIST_FILE = "$(SRCROOT)/iOSPulseDetector/iOSPulseDetector-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.1;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/melissamozifian/Downloads/gsl-ios-master/outdir",
+				);
 				PRODUCT_NAME = iOSPulseDetector;
 				WRAPPER_EXTENSION = app;
 			};

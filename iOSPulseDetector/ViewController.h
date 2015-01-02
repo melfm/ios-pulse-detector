@@ -16,6 +16,13 @@
 #import <boost/signals.hpp>
 #import <boost/bind.hpp>
 
+#import <gsl/gsl_spline.h>
+#import <gsl/gsl_errno.h>
+#import <gsl/gsl_complex.h>
+#import <gsl/gsl_complex_math.h>
+#import <gsl/gsl_fft_real.h>
+#import <gsl/gsl_fft_halfcomplex.h>
+
 
 @interface ViewController : UIViewController<CvVideoCameraDelegate>
 {
