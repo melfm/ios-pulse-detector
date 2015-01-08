@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="4514" systemVersion="12F37" targetRuntime="iOS.CocoaTouch.iPad" propertyAccessControl="none" useAutolayout="YES" initialViewController="2">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6254" systemVersion="14B25" targetRuntime="iOS.CocoaTouch.iPad" propertyAccessControl="none" useAutolayout="YES" initialViewController="2">
     <dependencies>
-        <deployment defaultVersion="1536" identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3747"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6247"/>
     </dependencies>
     <scenes>
         <!--View Controller-->
@@ -33,6 +32,18 @@
                                             <action selector="stopCaptureButtonPressed:" destination="2" id="Ss3-T0-M3u"/>
                                         </connections>
                                     </barButtonItem>
+                                    <barButtonItem style="plain" id="Z4z-Mm-aiX">
+                                        <button key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="eUX-KY-rD5">
+                                            <rect key="frame" x="240" y="7" width="88" height="30"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                            <state key="normal" title="Detect Pulse">
+                                                <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                            </state>
+                                        </button>
+                                        <connections>
+                                            <action selector="detectPulseButtonPressed:" destination="2" id="Ro6-Wl-01h"/>
+                                        </connections>
+                                    </barButtonItem>
                                 </items>
                             </toolbar>
                         </subviews>
@@ -48,6 +59,7 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="detectPulseButton" destination="Z4z-Mm-aiX" id="9dS-Ok-j3c"/>
                         <outlet property="imageView" destination="K8a-HC-HbG" id="QUm-3F-y9x"/>
                         <outlet property="startCaptureButton" destination="o8m-vC-Fml" id="wjC-6s-eD9"/>
                         <outlet property="stopCaptureButton" destination="AMi-LY-VFO" id="vNM-uf-5iq"/>
@@ -56,6 +68,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="3" sceneMemberID="firstResponder"/>
             </objects>
+            <point key="canvasLocation" x="194" y="311"/>
         </scene>
     </scenes>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">

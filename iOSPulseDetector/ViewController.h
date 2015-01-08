@@ -13,21 +13,18 @@
 #import <opencv2/highgui/ios.h>
 
 
-#import <boost/signals.hpp>
-#import <boost/bind.hpp>
-
-#import <gsl/gsl_spline.h>
-#import <gsl/gsl_errno.h>
-#import <gsl/gsl_complex.h>
-#import <gsl/gsl_complex_math.h>
-#import <gsl/gsl_fft_real.h>
-#import <gsl/gsl_fft_halfcomplex.h>
+#import "PulseDetector.hpp"
 
 
 @interface ViewController : UIViewController<CvVideoCameraDelegate>
 {
     CvVideoCamera* videoCamera;
     BOOL isCapturing;
+    cv::CascadeClassifier faceDetector;
+    PulseDetector pulseDetector;
+    BOOL beenTapped;
+    int numberOfSeconds;
+   
 }
 
 @property (nonatomic, strong) CvVideoCamera* videoCamera;
@@ -37,8 +34,14 @@
     UIBarButtonItem* startCaptureButton;
 @property (nonatomic, weak) IBOutlet
     UIBarButtonItem* stopCaptureButton;
+@property (nonatomic, weak) IBOutlet
+    UIBarButtonItem* detectPulseButton;
 
 -(IBAction)startCaptureButtonPressed:(id)sender;
 -(IBAction)stopCaptureButtonPressed:(id)sender;
+-(IBAction)detectPulseButtonPressed:(id)sender;
+
+
+//- (void)handleTap:(UITapGestureRecognizer *)sender;
 
 @end

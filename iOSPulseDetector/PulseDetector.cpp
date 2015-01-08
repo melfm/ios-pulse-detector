@@ -21,7 +21,7 @@
 #include <vector>
 
 
-void PulseDetector::run() {
+void PulseDetector::run(cv::Mat& frame) {
     
 }
 
@@ -43,6 +43,87 @@ void PulseDetector::getSubface(const cv::Rect& face, cv::Rect& sub, float sf_x, 
 double PulseDetector::calculate_mean(const cv::Mat& image) {
     cv::Scalar means = cv::mean(image);
     return (means.val[0] + means.val[1] + means.val[2]) / 3;
+}
+
+//
+// Main processing function
+//
+PU PulseDetector::estimateBPM(const cv::Mat& skin) {
+    _means.push_back(calculate_mean(skin));
+    _times.push_back(timestamp());
+    
+    
+    PU pdata;
+    int sampleSize = _means.size();
+    // Check Point
+    assert (_times.size() == sampleSize);
+    
+    // If there are no efficient samples, dont proceed
+    if (sampleSize <= MIN_SAMPLES) {
+        return pdata;
+    }
+    // If there are more samples than required, trim oldest
+    if (sampleSize > MAX_SAMPLES) {
+        list_trimfront(_means, MAX_SAMPLES);
+        list_trimfront(_times, MAX_SAMPLES);
+        list_trimfront(_bpms, MAX_SAMPLES);
+        sampleSize = MAX_SAMPLES;
+    }
+    // FPS
+    _fps = sampleSize / (_times.back() - _times.front());
+    vector<double> even_times = linspace(_times.front(), _times.back(), sampleSize);
+    
+    dump("times" , _times);
+    
+    vector<double> interpolated = interp(even_times, _times, _means);
+    
+    
+    
+    vector<double> hamming = hammingWindow(sampleSize);
+    
+    list_multiply_vector(interpolated, hamming);
+    
+    double totalMean = list_mean(interpolated);
+    list_subtract(interpolated, totalMean);
+    
+    // One dimensional Discrete FFT
+    vector<gsl_complex> fftraw = fft_transform(interpolated);
+    //dump_complex(fftraw);
+    
+    vector<double> angles = calculate_complex_angle(fftraw);
+    //dump("angles" , angles);
+    
+    // Get absolute values of FFT coefficients
+    _fftabs = calculate_complex_abs(fftraw);
+    
+    // Frequencies using spaced values within interval 0 - L/2+1
+    _frequencies = arange((sampleSize / 2) + 1);
+    list_multiply(_frequencies, _fps / sampleSize);
+    
+    // Get indices of frequences that are less than 50 and greater than 150
+    vector<double> freqs(_frequencies);
+    list_multiply(freqs, 60.0);
+    // Filter out frequencies less than 50 and greater than 180
+    vector<double> fitered_indices = list_filter(freqs, BPM_FILTER_LOW, BPM_FILTER_HIGH);
+    
+    
+    // Used filtered indices to get corresponding fft values, angles, and frequencies
+    _fftabs = list_pruned(_fftabs, fitered_indices);
+    //	dump("Pruned FFT abs: ", _fftabs);
+    freqs = list_pruned(freqs, fitered_indices);
+    //	dump("Pruned frequencies : ", freqs);
+    angles = list_pruned(angles, fitered_indices);
+    //dump("Pruned angles ", angles);	
+    
+    int max = list_argmax(_fftabs);
+    
+    _bpm = freqs[max];
+    _bpms.push_back(_bpm);
+    
+    pdata.bpm = _bpm;
+    
+    return pdata;
+    
 }
 
 
@@ -72,6 +153,90 @@ vector<double> PulseDetector::arange(int stop) {
         range[i] = i;
     }
     return range;
+}
+
+//
+// Transform data to FFT
+//http://www.gnu.org/software/gsl/manual/gsl-ref_16.html
+//
+vector<gsl_complex> PulseDetector::fft_transform(vector<double>& samples) {
+    int size = samples.size();
+    double data[size];
+    copy(samples.begin(), samples.end(), data);
+    // Transform to fft
+    gsl_fft_real_workspace* work = gsl_fft_real_workspace_alloc(size);
+    gsl_fft_real_wavetable* real = gsl_fft_real_wavetable_alloc(size);
+    gsl_fft_real_transform(data, 1, size, real, work);
+    gsl_fft_real_wavetable_free(real);
+    gsl_fft_real_workspace_free(work);
+    // Unpack complex numbers
+    gsl_complex unpacked[size];
+    gsl_fft_halfcomplex_unpack(data, (double *) unpacked, 1, size);
+    // Copy to  a vector
+    int unpacked_size = size / 2 + 1;
+    vector<gsl_complex> output(unpacked, unpacked + unpacked_size);
+    return output;
+}
+
+//
+// Get angles of raw fft coefficients
+//
+vector<double> PulseDetector::calculate_complex_angle(vector<gsl_complex> cvalues) {
+    // Get angles for a given complex number
+    vector<double> output(cvalues.size());
+    for (int i = 0; i< cvalues.size(); i++) {
+        double angle = atan2(GSL_IMAG(cvalues[i]), GSL_REAL(cvalues[i]));
+        output[i] = angle;
+    }
+    return output;
+}
+
+vector<double> PulseDetector::calculate_complex_abs(vector<gsl_complex> cvalues) {
+    // Calculate absolute value of a given complex number
+    vector<double> output(cvalues.size());
+    for (int i =0; i < cvalues.size(); i++) {
+        output[i] = gsl_complex_abs(cvalues[i]);
+    }
+    return output;
+}
+
+//
+// Interpolate function
+//
+vector<double> PulseDetector::interp(vector<double> interp_x, vector<double> data_x, vector<double> data_y) {
+    assert (data_x.size() == data_y.size());
+    vector<double> interp_y(interp_x.size());
+    vector<double> interpRes;
+    
+    // GSL function expects an array
+    double data_y_array[data_y.size()];
+    double data_x_array[data_x.size()];
+    
+    copy (data_y.begin(), data_y.end(), data_y_array);
+    //dump("data_y vals" , data_y);
+    //dump("data_x vals" , data_x);
+    
+    copy (data_x.begin(), data_x.end(), data_x_array);
+    
+    double yi;
+    long int L = interp_x.size();
+    
+    gsl_interp_accel *acc = gsl_interp_accel_alloc ();
+    gsl_spline *spline = gsl_spline_alloc (gsl_interp_linear, L);
+    gsl_spline_init (spline, data_x_array, data_y_array, L);
+    
+    // BUGFIX: Need to iterate throuh given x-interpolation range
+    for(int xi = 0; xi < interp_x.size(); xi++)
+    {
+        yi = gsl_spline_eval (spline, interp_x[xi], acc);
+        interpRes.push_back(yi);
+        //printf ("%g\n", yi);
+    }
+    
+    gsl_spline_free (spline);
+    gsl_interp_accel_free (acc);
+    
+    return interpRes;
 }
 
 //
@@ -151,6 +316,11 @@ int PulseDetector::list_argmax(vector<double>& data) {
         }
     }
     return indmax;
+}
+
+void PulseDetector::startTimer()
+{
+    _start = boost::chrono::system_clock::now();
 }
 
 void PulseDetector::clearBuffers()

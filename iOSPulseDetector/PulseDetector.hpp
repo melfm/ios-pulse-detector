@@ -20,12 +20,13 @@
 #include "boost/accumulators/statistics/stats.hpp"
 #include "boost/accumulators/statistics/mean.hpp"
 
-#include "gsl/gsl_errno.h"
-#include "gsl/gsl_spline.h"
-#include "gsl/gsl_complex.h"
-#include "gsl/gsl_complex_math.h"
-#include "gsl/gsl_fft_real.h"
-#include "gsl/gsl_fft_halfcomplex.h"
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_complex.h>
+#include <gsl/gsl_complex_math.h>
+#include <gsl/gsl_fft_real.h>
+#include <gsl/gsl_fft_halfcomplex.h>
+
 
 #define KEY_ESCAPE	((char) 27)
 #define KEY_S		('s')
@@ -42,6 +43,8 @@
 #define BPM_GRAPH_WIDTH		(BPM_TRACE_SIZE)
 
 using namespace std;
+using namespace std::chrono;
+
 
 typedef struct _PU {
     double bpm;
@@ -50,7 +53,7 @@ typedef struct _PU {
 class PulseDetector
 {
     
-private:
+public:
     cv::Mat _face;
     cv::Rect _forehead;
     vector<double> _means;
@@ -67,9 +70,9 @@ private:
     boost::chrono::system_clock::time_point _start;
     
 public:
-    void run();
+    void run(cv::Mat& frame);
     
-private:
+public:
     void getForehead(const cv::Rect& face, cv::Rect& forehead);
     void getSubface(const cv::Rect& face, cv::Rect& sub, float fh_x, float fh_y, float fh_w, float fh_h);
     PU estimateBPM(const cv::Mat& fhimg);
@@ -99,6 +102,8 @@ private:
     vector<double> list_pruned(vector<double>& data, vector<double>& index);
     vector<double> list_filter(vector<double>& data, double low, double high);
     int list_argmax(vector<double>& data);
+    
+    void startTimer();
     
     
     // Testing
