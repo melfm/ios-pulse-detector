@@ -13,7 +13,6 @@
 #include <iterator>
 #include <list>
 #include <fstream>
-#include <string.h>
 #include <stdlib.h>
 
 #include <iostream>
@@ -73,7 +72,6 @@ PU PulseDetector::estimateBPM(const cv::Mat& skin) {
     _fps = sampleSize / (_times.back() - _times.front());
     vector<double> even_times = linspace(_times.front(), _times.back(), sampleSize);
     
-    dump("times" , _times);
     
     vector<double> interpolated = interp(even_times, _times, _means);
     
@@ -88,10 +86,7 @@ PU PulseDetector::estimateBPM(const cv::Mat& skin) {
     
     // One dimensional Discrete FFT
     vector<gsl_complex> fftraw = fft_transform(interpolated);
-    //dump_complex(fftraw);
-    
     vector<double> angles = calculate_complex_angle(fftraw);
-    //dump("angles" , angles);
     
     // Get absolute values of FFT coefficients
     _fftabs = calculate_complex_abs(fftraw);
@@ -109,21 +104,16 @@ PU PulseDetector::estimateBPM(const cv::Mat& skin) {
     
     // Used filtered indices to get corresponding fft values, angles, and frequencies
     _fftabs = list_pruned(_fftabs, fitered_indices);
-    //	dump("Pruned FFT abs: ", _fftabs);
     freqs = list_pruned(freqs, fitered_indices);
-    //	dump("Pruned frequencies : ", freqs);
     angles = list_pruned(angles, fitered_indices);
-    //dump("Pruned angles ", angles);	
     
     int max = list_argmax(_fftabs);
     
     _bpm = freqs[max];
     _bpms.push_back(_bpm);
-    
     pdata.bpm = _bpm;
     
     return pdata;
-    
 }
 
 
@@ -299,6 +289,10 @@ vector<double> PulseDetector::list_filter(vector<double>& data, double low, doub
 
 vector<double> PulseDetector::list_pruned(vector<double>& data, vector<double>& indices) {
     vector<double> pruned;
+    
+    if (indices.size() == 0) {
+        return data;
+    }
     for (int i = 0; i < indices.size(); ++i) {
         assert (indices[i] >= 0 && indices[i] < data.size());
         pruned.push_back(data[indices[i]]);

@@ -49,6 +49,9 @@
     isCapturing = NO;
     beenTapped = NO;
     
+    // Start clock for timestamping
+    pulseDetector.startTimer();
+    
     
 }
 
@@ -89,26 +92,8 @@
 {
     // Do some OpenCV processing with the image
     
-    // Draw all detected faces
-  /*  for(unsigned int i = 0; i < faces.size(); i++)
-    {
-        const cv::Rect& face = faces[i];
-        // Get top-left and bottom-right corner points
-        cv::Point tl(face.x, face.y);
-        cv::Point br = tl + cv::Point(face.width, face.height);
-        
-        // Draw rectangle around the face
-        cv::Scalar magenta = cv::Scalar(255, 0, 255);
-        cv::rectangle(image, tl, br, magenta, 4, 8, 0);
-    }*/
-    
     // Create PulseData object
     PU pdata;
-    
-    // Start clock for timestamping
-    //pulseDetector._start = boost::chrono::system_clock::now();
-    pulseDetector.startTimer();
-    
     
     cv::Mat frameGreyscale;
     // Get some sleep after every read
