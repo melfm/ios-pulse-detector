@@ -23,7 +23,6 @@
     cv::CascadeClassifier faceDetector;
     PulseDetector pulseDetector;
     BOOL beenTapped;
-    int numberOfSeconds;
    
 }
 
@@ -34,14 +33,11 @@
     UIBarButtonItem* startCaptureButton;
 @property (nonatomic, weak) IBOutlet
     UIBarButtonItem* stopCaptureButton;
-@property (nonatomic, weak) IBOutlet
-    UIBarButtonItem* detectPulseButton;
 
 -(IBAction)startCaptureButtonPressed:(id)sender;
 -(IBAction)stopCaptureButtonPressed:(id)sender;
--(IBAction)detectPulseButtonPressed:(id)sender;
 
 
-//- (void)handleTap:(UITapGestureRecognizer *)sender;
+- (void)handleTap:(UITapGestureRecognizer *)sender;
 
 @end

@@ -19,32 +19,23 @@
                             <imageView userInteractionEnabled="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="K8a-HC-HbG">
                                 <rect key="frame" x="0.0" y="0.0" width="768" height="980"/>
                             </imageView>
-                            <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="T32-8I-Hbj">
+                            <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" barStyle="black" translatesAutoresizingMaskIntoConstraints="NO" id="T32-8I-Hbj">
                                 <rect key="frame" x="0.0" y="980" width="768" height="44"/>
                                 <items>
-                                    <barButtonItem title="Start capture" id="o8m-vC-Fml">
+                                    <barButtonItem title="Start capture" style="done" id="o8m-vC-Fml">
+                                        <color key="tintColor" red="0.93725490199999995" green="0.93725490199999995" blue="0.95686274510000002" alpha="1" colorSpace="calibratedRGB"/>
                                         <connections>
                                             <action selector="startCaptureButtonPressed:" destination="2" id="ldE-BC-S0t"/>
                                         </connections>
                                     </barButtonItem>
-                                    <barButtonItem title="Stop capture" id="AMi-LY-VFO">
+                                    <barButtonItem title="Stop capture" style="done" id="AMi-LY-VFO">
+                                        <color key="tintColor" cocoaTouchSystemColor="groupTableViewBackgroundColor"/>
                                         <connections>
                                             <action selector="stopCaptureButtonPressed:" destination="2" id="Ss3-T0-M3u"/>
                                         </connections>
                                     </barButtonItem>
-                                    <barButtonItem style="plain" id="Z4z-Mm-aiX">
-                                        <button key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="eUX-KY-rD5">
-                                            <rect key="frame" x="240" y="7" width="88" height="30"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                            <state key="normal" title="Detect Pulse">
-                                                <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                            </state>
-                                        </button>
-                                        <connections>
-                                            <action selector="detectPulseButtonPressed:" destination="2" id="Ro6-Wl-01h"/>
-                                        </connections>
-                                    </barButtonItem>
                                 </items>
+                                <color key="barTintColor" cocoaTouchSystemColor="viewFlipsideBackgroundColor"/>
                             </toolbar>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
@@ -59,7 +50,6 @@
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="detectPulseButton" destination="Z4z-Mm-aiX" id="9dS-Ok-j3c"/>
                         <outlet property="imageView" destination="K8a-HC-HbG" id="QUm-3F-y9x"/>
                         <outlet property="startCaptureButton" destination="o8m-vC-Fml" id="wjC-6s-eD9"/>
                         <outlet property="stopCaptureButton" destination="AMi-LY-VFO" id="vNM-uf-5iq"/>

@@ -25,7 +25,7 @@ void PulseDetector::run(cv::Mat& frame) {
 }
 
 void PulseDetector::getForehead(const cv::Rect& face, cv::Rect& forehead) {
-    getSubface(face, forehead, 0.50, 0.18, 0.25, 0.15);
+    getSubface(face, forehead, 0.50, 0.13, 0.35, 0.20);
     return;
 }
 

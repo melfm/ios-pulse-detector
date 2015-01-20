@@ -26,7 +26,11 @@
 {
     [super viewDidLoad];
     
-    //UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapFrom:)];
+    // Instantiate the gesture recognizer
+    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
+    [tapGestureRecognizer setNumberOfTapsRequired: 1];
+    [tapGestureRecognizer setNumberOfTouchesRequired: 1];
+    
     
     // Load cascade classifier from the XML file
     NSString* cascadePath = [[NSBundle mainBundle]
@@ -46,6 +50,13 @@
                                 AVCaptureVideoOrientationPortrait;
     self.videoCamera.defaultFPS = 30;
     
+    [self.view addGestureRecognizer: tapGestureRecognizer];
+    
+    self.navigationController.toolbar.barTintColor = [UIColor blackColor];
+    
+    
+    //float maxrate=((AVFrameRateRange*)[vFormat.videoSupportedFrameRateRanges objectAtIndex:0]).maxFrameRate;
+    
     isCapturing = NO;
     beenTapped = NO;
     
@@ -55,35 +66,23 @@
     
 }
 
-//- (NSInteger)supportedInterfaceOrientations
-//{
-//    // Only portrait orientation
-//    return UIInterfaceOrientationMaskPortrait;
-//}
-//
-//- (void)handleTap:(UITapGestureRecognizer *)sender
-//{
-//    if (sender.state == UIGestureRecognizerStateEnded)
-//    {
-//        // handling code
-//        
-//    }
-//}
-
--(IBAction)detectPulseButtonPressed:(id)sender
+- (void) handleTap: (UITapGestureRecognizer *)recognizer
 {
     beenTapped = YES;
 }
+
+
 
 -(IBAction)startCaptureButtonPressed:(id)sender
 {
     [videoCamera start];
     isCapturing = YES;
-    numberOfSeconds = 0;
 }
 
 -(IBAction)stopCaptureButtonPressed:(id)sender
 {
+    beenTapped = NO;
+    pulseDetector.clearBuffers();
     [videoCamera stop];
     isCapturing = NO;
 }
@@ -125,7 +124,7 @@
                 cv::putText(image, "Face", cv::Point(faces[i].x, faces[i].y), CV_FONT_HERSHEY_PLAIN, 1.2, color);
                 cv::rectangle(image, fh, cv::Scalar(0, 255, 255, 0), 1, 8, 0);
                 cv::putText(image, "Forehead", cv::Point(fh.x, fh.y), CV_FONT_HERSHEY_PLAIN, 1.2, color);
-                cv::putText(image, "Touch the screen to start processing", cv::Point(10, 40), CV_FONT_HERSHEY_PLAIN, 1.2, color);
+                cv::putText(image, "Tap the screen once to start processing", cv::Point(10, 40), CV_FONT_HERSHEY_PLAIN, 1.2, color);
             }
             
             else {
@@ -133,31 +132,25 @@
                 cv::Mat fhimg = image(pulseDetector._forehead);
                 cv::rectangle(image, pulseDetector._forehead, cv::Scalar(0, 255, 255, 0), 1, 8, 0);
                 //cv::putText(frameOriginal, "BMP Area", cv::Point(_forehead.x, _forehead.y), CV_FONT_HERSHEY_PLAIN, 1.2, color);
-                cv::putText(image, "Press 'R' to stop BPM monitoring", cv::Point(10, 40), CV_FONT_HERSHEY_PLAIN, 1.2, color);
+                //cv::putText(image, "Press 'R' to stop BPM monitoring", cv::Point(10, 40), CV_FONT_HERSHEY_PLAIN, 1.2, color);
                 pulseDetector.gap = (MAX_SAMPLES - (pulseDetector._means.size()) ) / pulseDetector._fps;
                 if( pulseDetector.gap > 0){
                     char buffer[50];
                     
-                    int n = snprintf(buffer, 50, "Please wait for %0.0lf s", pulseDetector.gap);
-                    cv::putText(image, buffer, cv::Point(pulseDetector._forehead.x + 100, pulseDetector._forehead.y+ 25), CV_FONT_HERSHEY_PLAIN, 1.2, color);
+                    int n = snprintf(buffer, 50, "Please wait for %0.0lf s ...", pulseDetector.gap);
+                    cv::putText(image, buffer, cv::Point(10, 40), CV_FONT_HERSHEY_PLAIN, 1.2, color);
                 }
                 
                 pdata = pulseDetector.estimateBPM(fhimg);
                 char bpmbuffer[50];
                 int n = sprintf(bpmbuffer, "estimate: %0.1lf bpm", (pdata.bpm));
-                cv::putText(image, bpmbuffer, cv::Point(pulseDetector._forehead.x , pulseDetector._forehead.y), CV_FONT_HERSHEY_PLAIN, 1.2, color);
+                cv::putText(image, bpmbuffer, cv::Point(pulseDetector._forehead.x - 30 , pulseDetector._forehead.y - 25), CV_FONT_HERSHEY_PLAIN, 1.2, color);
                 
             }
             
             
         }
         
-    }
-    
-   // Having timer issues - Kick off the algorithm after 10 counts
-    numberOfSeconds++;
-    if (numberOfSeconds > 10){
-         beenTapped = YES;
     }
     
     // Show resulting image
