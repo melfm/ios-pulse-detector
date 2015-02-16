@@ -27,6 +27,7 @@
 }
 
 @property (nonatomic, strong) CvVideoCamera* videoCamera;
+@property (nonatomic, strong) UIImage* _image;
 @property (nonatomic, strong) IBOutlet UIImageView* imageView;
 @property (nonatomic, strong) IBOutlet UIToolbar* toolbar;
 @property (nonatomic, weak) IBOutlet

@@ -21,7 +21,6 @@
 @synthesize startCaptureButton;
 @synthesize toolbar;
 @synthesize videoCamera;
-@synthesize size;
 
 - (void)viewDidLoad
 {
@@ -55,8 +54,6 @@
     
     self.navigationController.toolbar.barTintColor = [UIColor blackColor];
     
-    //size  = self.imageView.image.size();
-    //float maxrate=((AVFrameRateRange*)[vFormat.videoSupportedFrameRateRanges objectAtIndex:0]).maxFrameRate;
     
     isCapturing = NO;
     beenTapped = NO;
@@ -87,32 +84,21 @@
 -(IBAction)stopCaptureButtonPressed:(id)sender
 {
     if(isCapturing){
-        
-    
     [videoCamera stop];
     beenTapped = NO;
     pulseDetector.clearBuffers();
     isCapturing = NO;
         
     }
-    
 }
 
 - (void)processImage:(cv::Mat&)image
 {
-   // CGFloat cols = self.size.width;
-   // CGFloat rows = self.size.height;
-    
-   // cv::Mat m = cv::Mat::zeros(self.size.height, self.size.width, CV_32F);
     // Do some OpenCV processing with the image
-    
     // Create PulseData object
     PU pdata;
     
     cv::Mat frameGreyscale;
-    // Get some sleep after every read
-    // Needed? Already seems lagging
-   
     
     cv::Scalar color(255, 255, 0, 0);
     // Convert image to gray scale and equalize
@@ -146,8 +132,6 @@
                 // Get image data for the forehead for BPM monitoring
                 cv::Mat fhimg = image(pulseDetector._forehead);
                 cv::rectangle(image, pulseDetector._forehead, cv::Scalar(0, 255, 255, 0), 1, 8, 0);
-                //cv::putText(frameOriginal, "BMP Area", cv::Point(_forehead.x, _forehead.y), CV_FONT_HERSHEY_PLAIN, 1.2, color);
-                //cv::putText(image, "Press 'R' to stop BPM monitoring", cv::Point(10, 40), CV_FONT_HERSHEY_PLAIN, 1.2, color);
                 pulseDetector.gap = (MAX_SAMPLES - (pulseDetector._means.size()) ) / pulseDetector._fps;
                 if( pulseDetector.gap > 0){
                     char buffer[50];
@@ -163,10 +147,7 @@
                 
             }
             
-            
         }
-        
-
         
     }
     

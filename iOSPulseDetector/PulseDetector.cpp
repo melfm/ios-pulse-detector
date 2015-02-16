@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+// The Main FFT Helper
+FFTHelper *fftConverter = NULL;
 
 void PulseDetector::run(cv::Mat& frame) {
     
@@ -71,10 +73,7 @@ PU PulseDetector::estimateBPM(const cv::Mat& skin) {
     // FPS
     _fps = sampleSize / (_times.back() - _times.front());
     vector<double> even_times = linspace(_times.front(), _times.back(), sampleSize);
-    
-    
     vector<double> interpolated = interp(even_times, _times, _means);
-    
     
     
     vector<double> hamming = hammingWindow(sampleSize);
@@ -84,8 +83,56 @@ PU PulseDetector::estimateBPM(const cv::Mat& skin) {
     double totalMean = list_mean(interpolated);
     list_subtract(interpolated, totalMean);
     
+    
+    // FIXME: Convert to float as the FFT function
+    // currently expects floats
+    
+    int interpolated_size = interpolated.size();
+    float* outputInterpolation = (float*)malloc(interpolated_size * sizeof *outputInterpolation);
+    
+    int even_times_length = even_times.size();
+    float* even_times_floated = (float*)malloc(even_times_length * sizeof *even_times_floated);
+    
+    
+    for(int i =0; i < even_times.size(); ++i)
+    {
+        even_times_floated[i] = even_times[i];
+    }
+    
+    int _times_length = _times.size();
+    
+    float* _times_floated = (float*)malloc(_times_length * sizeof *even_times_floated);
+    
+    for(int i =0; i < _times.size(); ++i)
+    {
+        _times_floated[i] = _times[i];
+    }
+    
+    int _means_Length = _means.size();
+    
+    float* _means_floated = (float*)malloc(_means_Length * sizeof *_means_floated);
+    
+    for(int i =0; i < _means.size(); ++i)
+    {
+        _means_floated[i] = _means[i];
+    }
+    
+    long int L = even_times.size();
+    
+    
+    // Accelerate linear interpolation function
+    vDSP_vlint(_means_floated, _times_floated, 1, outputInterpolation, 1, L, L);
+
+    /*
+    for(int i =0; i < interpolated_size; ++i)
+    {
+        cout << "Converted Interpolation " << outputInterpolation[i] << endl;
+    }
+     */
+    
     // One dimensional Discrete FFT
-    vector<gsl_complex> fftraw = fft_transform(interpolated);
+    vector<gsl_complex> fftraw = fft_transform(interpolated, outputInterpolation);
+    
     vector<double> angles = calculate_complex_angle(fftraw);
     
     // Get absolute values of FFT coefficients
@@ -100,7 +147,6 @@ PU PulseDetector::estimateBPM(const cv::Mat& skin) {
     list_multiply(freqs, 60.0);
     // Filter out frequencies less than 50 and greater than 180
     vector<double> fitered_indices = list_filter(freqs, BPM_FILTER_LOW, BPM_FILTER_HIGH);
-    
     
     // Used filtered indices to get corresponding fft values, angles, and frequencies
     _fftabs = list_pruned(_fftabs, fitered_indices);
@@ -149,7 +195,7 @@ vector<double> PulseDetector::arange(int stop) {
 // Transform data to FFT
 //http://www.gnu.org/software/gsl/manual/gsl-ref_16.html
 //
-vector<gsl_complex> PulseDetector::fft_transform(vector<double>& samples) {
+vector<gsl_complex> PulseDetector::fft_transform(vector<double>& samples, Float32 *buffer) {
     int size = samples.size();
     double data[size];
     copy(samples.begin(), samples.end(), data);
@@ -165,7 +211,73 @@ vector<gsl_complex> PulseDetector::fft_transform(vector<double>& samples) {
     // Copy to  a vector
     int unpacked_size = size / 2 + 1;
     vector<gsl_complex> output(unpacked, unpacked + unpacked_size);
+    
+    
+    // =========================================================
+    // Try the new implementation
+    // =========================================================
+    
+    //fftConverter = FFTHelperCreate(size);
+    //Float32 *fftData = computeFFT(fftConverter, buffer, size);
+    
     return output;
+}
+
+
+FFTHelper *FFTHelperCreate(long numberOfSamples) {
+    
+    FFTHelper *helperRef = (FFTHelper*) malloc(sizeof(FFTHelper));
+    vDSP_Length log2n = log2f(numberOfSamples);
+    helperRef->fftSetup = vDSP_create_fftsetup(log2n, FFT_RADIX2);
+    int nOver2 = numberOfSamples/2;
+    helperRef->complexA.realp = (Float32*) malloc(nOver2*sizeof(Float32));
+    helperRef->complexA.imagp = (Float32*) malloc(nOver2*sizeof(Float32));
+    
+    helperRef->outFFTData = (Float32*) malloc(numberOfSamples*sizeof(Float32));
+    memset(helperRef->outFFTData, 0, nOver2*sizeof(Float32));
+    
+    helperRef->invertedCheckData = (Float32*) malloc(numberOfSamples*sizeof(Float32));
+    
+    return helperRef;
+}
+
+Float32 *computeFFT(FFTHelper *fftHelperRef, Float32 *timeDomainData, long numSamples) {
+    vDSP_Length log2n = log2f(numSamples);
+    Float32 mFFTNormFactor = 1.0/(2*numSamples);
+    
+    //convert float array of real samples to COMPLEX_SPLIT array A
+    vDSP_ctoz((COMPLEX*)timeDomainData, 2, &(fftHelperRef->complexA), 1, numSamples/2);
+    
+    // Perform FFT using fftSetup and A
+    // Results are returned in A
+    vDSP_fft_zrip(fftHelperRef->fftSetup, &(fftHelperRef->complexA),1, log2n, FFT_FORWARD);
+    
+    
+    //scale FFT
+    vDSP_vsmul(fftHelperRef->complexA.imagp, 1, &mFFTNormFactor, fftHelperRef->complexA.imagp, 1, numSamples);
+    vDSP_vsmul(fftHelperRef->complexA.realp, 1, &mFFTNormFactor, fftHelperRef->complexA.realp, 1, numSamples);
+    
+    
+    vDSP_zvmags(&(fftHelperRef->complexA), 1, fftHelperRef->outFFTData, 1, numSamples/2);
+    
+    //to check everything (checking by reversing to time-domain data ===================
+    // =================================================================================
+    vDSP_fft_zrip(fftHelperRef->fftSetup, &(fftHelperRef->complexA), 1, log2n, FFT_INVERSE);
+    vDSP_ztoc(&(fftHelperRef->complexA),1, (COMPLEX *) fftHelperRef->invertedCheckData, 2, numSamples/2);
+    //=================================================================================
+    
+    return fftHelperRef->outFFTData;
+}
+
+void FFTHelperRelease(FFTHelper *fftHelper) {
+    vDSP_destroy_fftsetup(fftHelper->fftSetup);
+    free(fftHelper->complexA.realp);
+    free(fftHelper->complexA.imagp);
+    free(fftHelper->outFFTData);
+    free(fftHelper->invertedCheckData);
+    free(fftHelper);
+    fftHelper = NULL;
+    
 }
 
 //
@@ -220,7 +332,7 @@ vector<double> PulseDetector::interp(vector<double> interp_x, vector<double> dat
     {
         yi = gsl_spline_eval (spline, interp_x[xi], acc);
         interpRes.push_back(yi);
-        //printf ("%g\n", yi);
+       // printf ("%g\n", yi);
     }
     
     gsl_spline_free (spline);
@@ -228,6 +340,12 @@ vector<double> PulseDetector::interp(vector<double> interp_x, vector<double> dat
     
     return interpRes;
 }
+
+
+
+// ============================================================
+
+
 
 //
 // List operations

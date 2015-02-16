@@ -27,6 +27,9 @@
 #include <gsl/gsl_fft_real.h>
 #include <gsl/gsl_fft_halfcomplex.h>
 
+#import <Accelerate/Accelerate.h>
+#include <MacTypes.h>
+
 
 #define KEY_ESCAPE	((char) 27)
 #define KEY_S		('s')
@@ -49,6 +52,18 @@ using namespace std::chrono;
 typedef struct _PU {
     double bpm;
 } PU;
+
+typedef struct FFTHelper {
+    FFTSetup fftSetup;
+    COMPLEX_SPLIT complexA;
+    Float32 *outFFTData;
+    Float32 *invertedCheckData;
+} FFTHelper;
+
+FFTHelper *FFTHelperCreate(long numberOfSamples);
+Float32 *computeFFT(FFTHelper *fftHelper, Float32 *timeDomainData,
+                    long numSamples);
+void FFTHelperHelperRelease(FFTHelper *fftHelper);
 
 class PulseDetector
 {
@@ -88,7 +103,7 @@ public:
     vector<double> hammingWindow(int M);
     vector<double> interp(vector<double> interp_x, vector<double> data_x, vector<double> data_y);
     
-    vector<gsl_complex> fft_transform(vector<double>& samples);
+    vector<gsl_complex> fft_transform(vector<double>& samples, Float32 *buffer);
     vector<double> complex_angles(vector<gsl_complex> cvalues);
     vector<double> calculate_complex_angle(vector<gsl_complex> cvalues);
     vector<double> calculate_complex_abs(vector<gsl_complex> cvalues);

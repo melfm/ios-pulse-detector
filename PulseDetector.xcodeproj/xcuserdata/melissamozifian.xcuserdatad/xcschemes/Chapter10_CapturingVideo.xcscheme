@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "83FA790D1748FE9000248405"
-               BuildableName = "iOSPulseDetector.app"
-               BlueprintName = "iOSPulseDetector"
-               ReferencedContainer = "container:iOSPulseDetector.xcodeproj">
+               BuildableName = "PulseDetector.app"
+               BlueprintName = "PulseDetector"
+               ReferencedContainer = "container:PulseDetector.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "83FA790D1748FE9000248405"
-            BuildableName = "iOSPulseDetector.app"
-            BlueprintName = "iOSPulseDetector"
-            ReferencedContainer = "container:iOSPulseDetector.xcodeproj">
+            BuildableName = "PulseDetector.app"
+            BlueprintName = "PulseDetector"
+            ReferencedContainer = "container:PulseDetector.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </TestAction>
@@ -52,9 +52,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "83FA790D1748FE9000248405"
-            BuildableName = "iOSPulseDetector.app"
-            BlueprintName = "iOSPulseDetector"
-            ReferencedContainer = "container:iOSPulseDetector.xcodeproj">
+            BuildableName = "PulseDetector.app"
+            BlueprintName = "PulseDetector"
+            ReferencedContainer = "container:PulseDetector.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <AdditionalOptions>
@@ -70,9 +70,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "83FA790D1748FE9000248405"
-            BuildableName = "iOSPulseDetector.app"
-            BlueprintName = "iOSPulseDetector"
-            ReferencedContainer = "container:iOSPulseDetector.xcodeproj">
+            BuildableName = "PulseDetector.app"
+            BlueprintName = "PulseDetector"
+            ReferencedContainer = "container:PulseDetector.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
