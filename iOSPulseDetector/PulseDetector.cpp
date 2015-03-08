@@ -19,11 +19,52 @@
 #include <string>
 #include <vector>
 
-// The Main FFT Helper
-FFTHelper *fftConverter = NULL;
 
-void PulseDetector::run(cv::Mat& frame) {
+FFTHelperRef* PulseDetector::FFTHelperCreate(vDSP_Length numberOfSamples)
+{
+    FFTHelperRef *helperRef = (FFTHelperRef*) malloc(sizeof(FFTHelperRef));
+    vDSP_Length log2n = log2f(numberOfSamples);
+    helperRef->fftSetup = vDSP_create_fftsetup(log2n, FFT_RADIX2);
     
+    int nOver2 = numberOfSamples/2;
+    
+    helperRef->complexA.realp = (float*) malloc(nOver2 * sizeof(float));
+    helperRef->complexA.imagp = (float*) malloc(nOver2 * sizeof(float));
+    
+    helperRef->outFFTData = (float*) malloc(nOver2 * sizeof(float) );
+    memset(helperRef->outFFTData, 0, nOver2 * sizeof(float));
+    
+    helperRef->invertedCheckData = (float*) malloc(numberOfSamples * sizeof(float) );
+    
+    return helperRef;
+}
+
+float* PulseDetector::computeFFT(FFTHelperRef *fftHelperRef, float *timeDomainData, vDSP_Length numSamples) {
+    
+    vDSP_Length log2n = log2f(numSamples);
+    Float32 mFFTNormFactor = 1.0/(2*numSamples);
+    
+    dump_float("Original Data",timeDomainData);
+    
+    //Convert float array of reals samples to COMPLEX_SPLIT array A
+    vDSP_ctoz((COMPLEX*)timeDomainData, 2, &(fftHelperRef->complexA), 1, numSamples/2);
+    
+    // Perform a real-to-complex FFT.
+    vDSP_fft_zrip(fftHelperRef->fftSetup, &(fftHelperRef->complexA), 1, log2n, FFT_FORWARD);
+    
+    //scale fft
+    vDSP_vsmul(fftHelperRef->complexA.realp, 1, &mFFTNormFactor, fftHelperRef->complexA.realp, 1, numSamples/2);
+    vDSP_vsmul(fftHelperRef->complexA.imagp, 1, &mFFTNormFactor, fftHelperRef->complexA.imagp, 1, numSamples/2);
+    
+    //vDSP_zvmags(&(fftHelperRef->complexA), 1, fftHelperRef->outFFTData, 1, numSamples/2);
+    
+    //to check everything (checking by reversing to time-domain data) =============================
+    vDSP_fft_zrip(fftHelperRef->fftSetup, &(fftHelperRef->complexA), 1, log2n, FFT_INVERSE);
+    vDSP_ztoc( &(fftHelperRef->complexA), 1, (COMPLEX *) fftHelperRef->invertedCheckData , 2, numSamples/2);
+    //=============================================================================================
+    dump_float("Inverted Back",fftHelperRef->invertedCheckData);
+    
+    return fftHelperRef->outFFTData;
 }
 
 void PulseDetector::getForehead(const cv::Rect& face, cv::Rect& forehead) {
@@ -75,17 +116,12 @@ PU PulseDetector::estimateBPM(const cv::Mat& skin) {
     vector<double> even_times = linspace(_times.front(), _times.back(), sampleSize);
     vector<double> interpolated = interp(even_times, _times, _means);
     
-    
     vector<double> hamming = hammingWindow(sampleSize);
     
     list_multiply_vector(interpolated, hamming);
     
     double totalMean = list_mean(interpolated);
     list_subtract(interpolated, totalMean);
-    
-    
-    // FIXME: Convert to float as the FFT function
-    // currently expects floats
     
     int interpolated_size = interpolated.size();
     float* outputInterpolation = (float*)malloc(interpolated_size * sizeof *outputInterpolation);
@@ -120,23 +156,41 @@ PU PulseDetector::estimateBPM(const cv::Mat& skin) {
     long int L = even_times.size();
     
     
-    // Accelerate linear interpolation function
+    // linear interpolation between neighboring elements
+    ////////////////////////////////////////////////////////
     vDSP_vlint(_means_floated, _times_floated, 1, outputInterpolation, 1, L, L);
-
-    /*
-    for(int i =0; i < interpolated_size; ++i)
-    {
-        cout << "Converted Interpolation " << outputInterpolation[i] << endl;
-    }
-     */
+    
+    
+    // Multiply by hamming window
+    list_multiply_vector(outputInterpolation, hamming);
+    
+    float totalMeanFloat = list_mean_float(outputInterpolation, sampleSize);
+    list_subtract(outputInterpolation, totalMeanFloat, sampleSize);
+    ////////////////////////////////////////////////////////
+    
+    
     
     // One dimensional Discrete FFT
-    vector<gsl_complex> fftraw = fft_transform(interpolated, outputInterpolation);
+    vector<gsl_complex> fftraw = fft_transform(interpolated);
+    
+    // The Main FFT Helper
+    FFTHelperRef *fftConverter = NULL;
+    
+    //initialize stuff
+    fftConverter = FFTHelperCreate(sampleSize);
+    
+    float *fftData = computeFFT(fftConverter, outputInterpolation, sampleSize);
     
     vector<double> angles = calculate_complex_angle(fftraw);
     
+    vector<float> angles_Float = calculate_complex_angle_float(fftConverter, sampleSize);
+    
+
     // Get absolute values of FFT coefficients
     _fftabs = calculate_complex_abs(fftraw);
+    
+    
+   // dump("Complex abs", _fftabs);
     
     // Frequencies using spaced values within interval 0 - L/2+1
     _frequencies = arange((sampleSize / 2) + 1);
@@ -195,7 +249,7 @@ vector<double> PulseDetector::arange(int stop) {
 // Transform data to FFT
 //http://www.gnu.org/software/gsl/manual/gsl-ref_16.html
 //
-vector<gsl_complex> PulseDetector::fft_transform(vector<double>& samples, Float32 *buffer) {
+vector<gsl_complex> PulseDetector::fft_transform(vector<double>& samples) {
     int size = samples.size();
     double data[size];
     copy(samples.begin(), samples.end(), data);
@@ -212,72 +266,7 @@ vector<gsl_complex> PulseDetector::fft_transform(vector<double>& samples, Float3
     int unpacked_size = size / 2 + 1;
     vector<gsl_complex> output(unpacked, unpacked + unpacked_size);
     
-    
-    // =========================================================
-    // Try the new implementation
-    // =========================================================
-    
-    //fftConverter = FFTHelperCreate(size);
-    //Float32 *fftData = computeFFT(fftConverter, buffer, size);
-    
     return output;
-}
-
-
-FFTHelper *FFTHelperCreate(long numberOfSamples) {
-    
-    FFTHelper *helperRef = (FFTHelper*) malloc(sizeof(FFTHelper));
-    vDSP_Length log2n = log2f(numberOfSamples);
-    helperRef->fftSetup = vDSP_create_fftsetup(log2n, FFT_RADIX2);
-    int nOver2 = numberOfSamples/2;
-    helperRef->complexA.realp = (Float32*) malloc(nOver2*sizeof(Float32));
-    helperRef->complexA.imagp = (Float32*) malloc(nOver2*sizeof(Float32));
-    
-    helperRef->outFFTData = (Float32*) malloc(numberOfSamples*sizeof(Float32));
-    memset(helperRef->outFFTData, 0, nOver2*sizeof(Float32));
-    
-    helperRef->invertedCheckData = (Float32*) malloc(numberOfSamples*sizeof(Float32));
-    
-    return helperRef;
-}
-
-Float32 *computeFFT(FFTHelper *fftHelperRef, Float32 *timeDomainData, long numSamples) {
-    vDSP_Length log2n = log2f(numSamples);
-    Float32 mFFTNormFactor = 1.0/(2*numSamples);
-    
-    //convert float array of real samples to COMPLEX_SPLIT array A
-    vDSP_ctoz((COMPLEX*)timeDomainData, 2, &(fftHelperRef->complexA), 1, numSamples/2);
-    
-    // Perform FFT using fftSetup and A
-    // Results are returned in A
-    vDSP_fft_zrip(fftHelperRef->fftSetup, &(fftHelperRef->complexA),1, log2n, FFT_FORWARD);
-    
-    
-    //scale FFT
-    vDSP_vsmul(fftHelperRef->complexA.imagp, 1, &mFFTNormFactor, fftHelperRef->complexA.imagp, 1, numSamples);
-    vDSP_vsmul(fftHelperRef->complexA.realp, 1, &mFFTNormFactor, fftHelperRef->complexA.realp, 1, numSamples);
-    
-    
-    vDSP_zvmags(&(fftHelperRef->complexA), 1, fftHelperRef->outFFTData, 1, numSamples/2);
-    
-    //to check everything (checking by reversing to time-domain data ===================
-    // =================================================================================
-    vDSP_fft_zrip(fftHelperRef->fftSetup, &(fftHelperRef->complexA), 1, log2n, FFT_INVERSE);
-    vDSP_ztoc(&(fftHelperRef->complexA),1, (COMPLEX *) fftHelperRef->invertedCheckData, 2, numSamples/2);
-    //=================================================================================
-    
-    return fftHelperRef->outFFTData;
-}
-
-void FFTHelperRelease(FFTHelper *fftHelper) {
-    vDSP_destroy_fftsetup(fftHelper->fftSetup);
-    free(fftHelper->complexA.realp);
-    free(fftHelper->complexA.imagp);
-    free(fftHelper->outFFTData);
-    free(fftHelper->invertedCheckData);
-    free(fftHelper);
-    fftHelper = NULL;
-    
 }
 
 //
@@ -288,6 +277,19 @@ vector<double> PulseDetector::calculate_complex_angle(vector<gsl_complex> cvalue
     vector<double> output(cvalues.size());
     for (int i = 0; i< cvalues.size(); i++) {
         double angle = atan2(GSL_IMAG(cvalues[i]), GSL_REAL(cvalues[i]));
+        output[i] = angle;
+    }
+    return output;
+}
+
+//
+// Get angles of raw fft coefficients
+//
+vector<float> PulseDetector::calculate_complex_angle_float(FFTHelperRef* ffthelper, int size) {
+    // Get angles for a given complex number
+    vector<float> output(sizeof(ffthelper->outFFTData));
+    for (int i = 0; i< sizeof(ffthelper->outFFTData); i++) {
+        double angle = atan2(ffthelper->complexA.imagp[i], ffthelper->complexA.realp[i]);
         output[i] = angle;
     }
     return output;
@@ -369,6 +371,20 @@ double PulseDetector::list_mean(vector<double>& data) {
     return boost::accumulators::mean(acc);
 }
 
+float PulseDetector::list_mean_float(float* data, int size) {
+   
+    //the average may not necessarily be integer
+    float avg = 0.0;  //or double for higher precision
+    float sum = 0.0;
+    for (int i = 0; i < size; ++i)
+    {
+        sum += data[i];
+    }
+    avg = ((float)sum)/size; //or cast sum to double before division
+    
+    return avg;
+}
+
 void PulseDetector::list_trimfront(vector<double>& list, int limit) {
     int excess = list.size() - limit;
     if (excess > 0) {
@@ -382,6 +398,12 @@ void PulseDetector::list_subtract(vector<double>& data, double value) {
     }
 }
 
+void PulseDetector::list_subtract(float* data, float value, int size) {
+    for (int i = 0; i < size; ++i) {
+        data[i] -= value;
+    }
+}
+
 void PulseDetector::list_multiply(vector<double>& data, double value) {
     for (int i = 0; i < data.size(); ++i) {
         data[i] *= value;
@@ -391,6 +413,13 @@ void PulseDetector::list_multiply(vector<double>& data, double value) {
 void PulseDetector::list_multiply_vector(vector<double>& data, vector<double>& mult) {
     assert (data.size() == mult.size());
     for (int i = 0; i < data.size(); ++i) {
+        data[i] *= mult[i];
+    }
+}
+
+void PulseDetector::list_multiply_vector(float *data, vector<double>& mult) {
+    //assert (data.size() == mult.size());
+    for (int i = 0; i < mult.size(); ++i) {
         data[i] *= mult[i];
     }
 }

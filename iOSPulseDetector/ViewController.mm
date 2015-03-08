@@ -11,6 +11,11 @@
 
 #import "ViewController.h"
 
+
+
+
+
+
 @interface ViewController ()
 
 @end
@@ -61,6 +66,36 @@
     // Start clock for timestamping
     pulseDetector.startTimer();
     
+    // Call the FFT function for testing
+    ////////////////////////////////////
+    
+    
+    vDSP_Length Log2N = 10u;
+    vDSP_Length N = (1u<<Log2N);
+
+    cout << "Log2N " << Log2N << endl;
+    cout << "N : " << N << endl;
+    
+    static const float_t TwoPi = 0x3.243f6a8885a308d313198a2e03707344ap1;
+    
+    
+    // Generate input signal
+    const float Frequency0 = 79, Frequency1 = 296, Frequency2 = 143;
+    const float Phase0 = 0, Phase1 = .2f, Phase2 = .6f;
+    
+    // Allocate memory for the arrays.
+    float *Signal = (float*)malloc(N * sizeof Signal);
+    
+    
+    vDSP_Length i;
+    for ( i = 0; i < N; ++i) {
+        Signal[i] =
+        cos((i * Frequency0 / N + Phase0) * TwoPi)
+        + cos((i * Frequency1 / N + Phase1) * TwoPi)
+        + cos((i * Frequency2 / N + Phase2) * TwoPi);
+    }
+    
+
     
 }
 
