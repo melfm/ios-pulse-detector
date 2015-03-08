@@ -127,6 +127,11 @@ public:
                       vDSP_Length numSamples);
     
     void FFTHelperHelperRelease(FFTHelperRef *fftHelper);
+    
+    void CompareComplexVectors(
+                    DSPSplitComplex Expected,
+                    DSPSplitComplex Observed,
+                    vDSP_Length Length);
 
     
     void startTimer();

@@ -95,8 +95,42 @@
         + cos((i * Frequency2 / N + Phase2) * TwoPi);
     }
     
-
+    // The Main FFT Helper
+    FFTHelperRef *fftConverter = NULL;
     
+    //initialize stuff
+    fftConverter = pulseDetector.FFTHelperCreate(N);
+    float *fftData = pulseDetector.computeFFT(fftConverter, Signal, N);
+    
+    /*	Prepare expected results based on analytical transformation of
+     the input signal.
+     */
+    float *ExpectedMemory = (float*)malloc(N * sizeof *ExpectedMemory);
+    if (ExpectedMemory == NULL)
+    {
+        fprintf(stderr, "Error, failed to allocate memory.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Assign half of ExpectedMemory to reals and half to imaginaries.
+    DSPSplitComplex Expected = { ExpectedMemory, ExpectedMemory + N/2 };
+    
+    for (i = 0; i < N/2; ++i)
+        Expected.realp[i] = Expected.imagp[i] = 0;
+    
+    // Add the frequencies in the signal to the expected results.
+    Expected.realp[(int) Frequency0] = N * cos(Phase0 * TwoPi);
+    Expected.imagp[(int) Frequency0] = N * sin(Phase0 * TwoPi);
+    
+    Expected.realp[(int) Frequency1] = N * cos(Phase1 * TwoPi);
+    Expected.imagp[(int) Frequency1] = N * sin(Phase1 * TwoPi);
+    
+    Expected.realp[(int) Frequency2] = N * cos(Phase2 * TwoPi);
+    Expected.imagp[(int) Frequency2] = N * sin(Phase2 * TwoPi);
+    
+    // Compare the observed results to the expected results.
+    pulseDetector.CompareComplexVectors(Expected, fftConverter->complexA, N/2);
+
 }
 
 - (void) handleTap: (UITapGestureRecognizer *)recognizer

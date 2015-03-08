@@ -475,3 +475,32 @@ void PulseDetector::clearBuffers()
     _bpms.clear();
     gap = 0;
 }
+
+
+/*	Compare two complex vectors and report the relative error between them.
+	(The vectors must have unit strides; other strides are not supported.)
+ */
+void PulseDetector::CompareComplexVectors(
+                                  DSPSplitComplex Expected, DSPSplitComplex Observed, vDSP_Length Length)
+{
+    double_t Error = 0, Magnitude = 0;
+    
+    int i;
+    for (i = 0; i < Length; ++i)
+    {
+        double_t re, im;
+        
+        // Accumulate square of magnitude of elements.
+        re = Expected.realp[i];
+        im = Expected.imagp[i];
+        Magnitude += re*re + im*im;
+        
+        // Accumulate square of error.
+        re = Expected.realp[i] - Observed.realp[i];
+        im = Expected.imagp[i] - Observed.imagp[i];
+        Error += re*re + im*im;
+    }
+    
+    printf("\tRelative error in observed result is %g.\n",
+           sqrt(Error / Magnitude));
+}
